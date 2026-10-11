@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import fs from 'fs';
 import { config, isApiKeyConfigured, isMongoConfigured } from './config/env.js';
 import { connectToDatabase, isDatabaseConnected } from './db/connection.js';
 import apiRoutes from './routes/api.js';
@@ -56,6 +58,30 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Mount API routes
 app.use('/api', apiRoutes);
+
+// In production or full-stack deployments, serve the built React frontend if available
+const clientDistCandidates = [
+  path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), 'dist/client'),
+];
+
+let clientDistPath: string | null = null;
+for (const candidate of clientDistCandidates) {
+  if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, 'index.html'))) {
+    clientDistPath = candidate;
+    break;
+  }
+}
+
+if (clientDistPath) {
+  console.log(`📦 Serving React frontend from: ${clientDistPath}`);
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(clientDistPath!, 'index.html'));
+  });
+}
 
 // Global Error Handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
