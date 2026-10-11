@@ -1,8 +1,3 @@
-# =================================================================
-# WebGenius AI — Render Infrastructure as Code (render.yaml Blueprint)
-# Deploys both Backend Web Service and Frontend Static Site on Render
-# =================================================================
-
 services:
   # -------------------------------------------------------------
   # 1. WebGenius AI Backend API (Node.js Express Web Service)
@@ -20,7 +15,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 5000
+        value: "5000"
       - key: GEMINI_MODEL
         value: gemini-3.8-flash
       - key: MONGODB_DB_NAME
@@ -34,15 +29,9 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       - key: CLIENT_ORIGIN
-        fromService:
-          type: web
-          name: webgenius-ui
-          property: url
+        sync: false
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: webgenius-ui
-          property: url
+        sync: false
 
   # -------------------------------------------------------------
   # 2. WebGenius AI Frontend UI (React + Vite Static Site)
@@ -50,8 +39,6 @@ services:
   - type: web
     name: webgenius-ui
     runtime: static
-    plan: free
-    region: oregon
     rootDir: client
     buildCommand: npm install && npm run build
     staticPublishPath: dist
@@ -61,7 +48,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: webgenius-api
-          property: url
+        sync: false
